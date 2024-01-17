@@ -3,10 +3,9 @@ JAZZMIN_SETTINGS = {
     # title of the window (Will default to current_admin_site.site_title if absent or None)
     "site_title": "Kho Cổ Phiếu",
       # Title on the login screen (19 chars max) (defaults to current_admin_site.site_header if absent or None)
-    "site_header": "Ecotrading",
+    "site_header": "Kho Cổ Phiếu",
      # Title on the brand (19 chars max) (defaults to current_admin_site.site_header if absent or None)
-    "site_brand": "Ecotrading",
-
+    "site_brand": "Kho Cổ Phiếu",
     # Logo to use for login form in dark themes (defaults to login_logo)
     "login_logo_dark": None,
 
@@ -14,15 +13,15 @@ JAZZMIN_SETTINGS = {
     "site_logo_classes": "img-circle" ,
 
     # Relative path to a favicon for your site, will default to site_logo if absent (ideally 32x32 px)
-    "site_icon": "/infotrading/img/logo.PNG",
-    "site_logo": "/infotrading/img/logo.PNG",
+    # "site_icon": "/infotrading/img/logo.PNG",
+    # "site_logo": "/infotrading/img/logo.PNG",
 
 
     # Welcome text on the login screen
-    "welcome_sign": "Welcome to ECO TEAM",
+    "welcome_sign": "Welcome to Kho cổ phiếu",
 
     # Copyright on the footer
-    "copyright": "Ecoteam",
+    "copyright": "tinphan",
 
     # List of model admins to search from the search bar, search bar omitted if excluded
     # If you want to use a single search field you dont need to use a list, you can use a simple string 
