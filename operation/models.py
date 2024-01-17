@@ -83,7 +83,6 @@ class Account (models.Model):
     total_pl = models.FloatField(default=0,verbose_name= 'Tổng lời lỗ')
     total_closed_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ đã chốt')
     total_temporarily_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ tạm tính')
-    # credit_limit = models.FloatField(default=get_credit_limit_default, verbose_name='Hạn mức mua')
     credit_limit = models.FloatField(default=1000000000, verbose_name='Hạn mức mua')
     class Meta:
          verbose_name = 'Tài khoản'
