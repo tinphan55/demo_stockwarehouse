@@ -109,7 +109,7 @@ DATABASES_LIST = [{
 #server
       'default': {
          'ENGINE': 'django.db.backends.postgresql',
-         'NAME': 'demo',                      
+         'NAME': 'demo_warehouse',                      
          'USER': 'admin',
          'PASSWORD': 'Ecotr@ding2023',
          'HOST': 'localhost',
