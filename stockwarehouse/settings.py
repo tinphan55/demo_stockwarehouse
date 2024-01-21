@@ -105,18 +105,17 @@ WSGI_APPLICATION = 'stockwarehouse.wsgi.application'
 
 
 
-DATABASES_LIST = [
-#     {
-# #server
-#       'default': {
-#          'ENGINE': 'django.db.backends.postgresql',
-#          'NAME': 'stock_warehouse',                      
-#          'USER': 'bot',
-#          'PASSWORD': 'Finwealth@AbotAI@2024',
-#          'HOST': 'localhost',
-#          'PORT': '',
-#      }
-#  }, 
+DATABASES_LIST = [{
+#server
+      'default': {
+         'ENGINE': 'django.db.backends.postgresql',
+         'NAME': 'stock_warehouse',                      
+         'USER': 'bot',
+         'PASSWORD': 'Finwealth@AbotAI@2024',
+         'HOST': 'localhost',
+         'PORT': '',
+     }
+ }, 
 #localhost
 
 
@@ -126,23 +125,21 @@ DATABASES_LIST = [
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': 'ecotrading',                      
         'USER': 'postgres',
-        'PASSWORD': 'Ecotr@ding2023',
+        'PASSWORD': 'Ecotrading2023',
         'HOST': 'localhost',
-        'PORT': '5468',
+        'PORT': '5432',
     }
 },
-# {
-#      'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'postgres',                      
-#         'USER': 'postgres',
-#         'PASSWORD': 'Ecotrading2024',
-#         'HOST': 'localhost',
-#         'PORT': '5432',
-#     }
-# }
-
-]
+{
+     'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',                      
+        'USER': 'postgres',
+        'PASSWORD': 'Ecotrading2024',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}]
 DATABASES = DATABASES_LIST[0]
 
 # Password validation
