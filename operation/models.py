@@ -16,29 +16,28 @@ from cpd.models import ClientPartnerInfo
 from django.contrib.auth.hashers import make_password
 from regulations.models import *
 
-maintenance_margin_ratio =17
-force_sell_margin_ratio = 13
-# maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
-# force_sell_margin_ratio = OperationRegulations.objects.get(pk=5).parameters
 
-# def get_default_parameters(pk):
-#     try:
-#         return OperationRegulations.objects.get(pk=pk).parameters
-#     except OperationRegulations.DoesNotExist:
-#         # Trả về giá trị mặc định nếu không tìm thấy đối tượng
-#         return 0.0  # hoặc giá trị mặc định của bạn
+maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
+force_sell_margin_ratio = OperationRegulations.objects.get(pk=5).parameters
 
-# def get_interest_fee_default():
-#     return get_default_parameters(pk=3)
+def get_default_parameters(pk):
+    try:
+        return OperationRegulations.objects.get(pk=pk).parameters
+    except OperationRegulations.DoesNotExist:
+        # Trả về giá trị mặc định nếu không tìm thấy đối tượng
+        return 0.0  # hoặc giá trị mặc định của bạn
 
-# def get_transaction_fee_default():
-#     return get_default_parameters(pk=1)
+def get_interest_fee_default():
+    return get_default_parameters(pk=3)
 
-# def get_tax_fee_default():
-#     return get_default_parameters(pk=2)
+def get_transaction_fee_default():
+    return get_default_parameters(pk=1)
 
-# def get_credit_limit_default():
-#     return get_default_parameters(pk=6)
+def get_tax_fee_default():
+    return get_default_parameters(pk=2)
+
+def get_credit_limit_default():
+    return get_default_parameters(pk=6)
 
 
 
@@ -54,12 +53,9 @@ class Account (models.Model):
     description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
     cpd = models.ForeignKey(ClientPartnerInfo,null=True, blank = True,on_delete=models.CASCADE, verbose_name= 'Người giới thiệu' )
     #biểu phí dịch vụ
-    # interest_fee = models.FloatField(default=get_interest_fee_default, verbose_name='Lãi suất')
-    # transaction_fee = models.FloatField(default=get_transaction_fee_default, verbose_name='Phí giao dịch')
-    # tax = models.FloatField(default=get_tax_fee_default, verbose_name='Thuế')
-    interest_fee = models.FloatField(default=0, verbose_name='Lãi suất')
-    transaction_fee = models.FloatField(default=0, verbose_name='Phí giao dịch')
-    tax = models.FloatField(default=0, verbose_name='Thuế')
+    interest_fee = models.FloatField(default=get_interest_fee_default, verbose_name='Lãi suất')
+    transaction_fee = models.FloatField(default=get_transaction_fee_default, verbose_name='Phí giao dịch')
+    tax = models.FloatField(default=get_tax_fee_default, verbose_name='Thuế')
     # Phục vụ tính tổng cash_balace:
     net_cash_flow= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
     net_trading_value= models.FloatField(default=0,verbose_name= 'Giao dịch ròng')
@@ -83,7 +79,8 @@ class Account (models.Model):
     total_pl = models.FloatField(default=0,verbose_name= 'Tổng lời lỗ')
     total_closed_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ đã chốt')
     total_temporarily_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ tạm tính')
-    credit_limit = models.FloatField(default=1000000000, verbose_name='Hạn mức mua')
+    credit_limit = models.FloatField(default=get_credit_limit_default, verbose_name='Hạn mức mua')
+    milestone_date_lated = models.DateTimeField(null =True, blank =True, verbose_name = 'Ngày tất toán gần nhất')
     class Meta:
          verbose_name = 'Tài khoản'
          verbose_name_plural = 'Tài khoản'
@@ -111,9 +108,9 @@ class Account (models.Model):
     
     def save(self, *args, **kwargs):
     # Your first save method code
-        self.total_temporarily_interest = self.total_loan_interest - self.total_interest_paid
-        self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_loan_interest
-        self.interest_cash_balance =  self.cash_t0 + self.total_buy_trading_value
+        self.total_loan_interest = self.total_temporarily_interest + self.total_interest_paid
+        self.cash_balance = self.net_cash_flow + self.net_trading_value + self.total_temporarily_interest
+        self.interest_cash_balance =  self.cash_t0 + self.total_buy_trading_value 
         stock_mapping = {obj.stock: obj.initial_margin_requirement for obj in StockListMargin.objects.all()}
         port = Portfolio.objects.filter(account=self.pk, sum_stock__gt=0)
         sum_initial_margin = 0
@@ -130,8 +127,8 @@ class Account (models.Model):
         self.excess_equity = self.nav - self.initial_margin_requirement
         if self.market_value != 0:
             self.margin_ratio = abs(round((self.nav / self.market_value) * 100, 2))
-        self.total_pl = self.nav - self.net_cash_flow
-        self.total_temporarily_pl = self.total_pl - self.total_closed_pl
+        self.total_temporarily_pl= self.nav - self.net_cash_flow
+        self.total_pl  = self.total_temporarily_pl + self.total_closed_pl
         bot = Bot(token='5806464470:AAH9bLZxhx6xXDJ9rlPKkhaJ6lKpKRrZEfA')
         if self.status:
             noti = f"Tài khoản {self.pk}, tên {self.name} bị {self.status} "
@@ -154,6 +151,31 @@ class Account (models.Model):
             # Thêm user vào nhóm "customer"
             group, created = Group.objects.get_or_create(name='customer')
             user.groups.add(group)
+
+#Tạo model với các ngăn tất toán của tài khoản
+class AccountMilestone(models.Model):
+    account = models.ForeignKey(Account,on_delete=models.CASCADE,verbose_name="Tài khoản")
+    milestone = models.IntegerField(verbose_name = 'Giai đoạn')
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
+    modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
+    description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
+    interest_fee = models.FloatField(default=get_interest_fee_default, verbose_name='Lãi suất')
+    transaction_fee = models.FloatField(default=get_transaction_fee_default, verbose_name='Phí giao dịch')
+    tax = models.FloatField(default=get_tax_fee_default, verbose_name='Thuế')
+    # Phục vụ tính tổng cash_balace:
+    net_cash_flow= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
+    total_buy_trading_value= models.FloatField(default=0,verbose_name= 'Tổng giá trị mua')
+    net_trading_value = models.FloatField(default=0,verbose_name= 'Giao dịch ròng')
+    interest_paid= models.FloatField(default=0,verbose_name= 'Tổng lãi vay đã trả')
+    closed_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ đã chốt')
+    
+
+    class Meta:
+         verbose_name = 'Mốc Tài khoản'
+         verbose_name_plural = 'Mốc Tài khoản'
+
+    def __str__(self):
+        return str(self.account) +str('_Lần_')+ str(self.milestone)
 
 class MaxTradingPowerAccount(Account):
     class Meta:
@@ -322,7 +344,11 @@ class Portfolio (models.Model):
         self.percent_profit = 0
         if self.sum_stock >0:
             self.market_price = round(get_stock_market_price(str(self.stock)),0)
-            self.avg_price = round(cal_avg_price(self.account.pk,self.stock)*1000,0)
+            if self.account.milestone_date_lated:
+                date_cal = self.account.milestone_date_lated
+            else:
+                date_cal = self.account.created_at
+            self.avg_price = round(cal_avg_price(self.account.pk,self.stock,date_cal )*1000,0)
             self.profit = round((self.market_price - self.avg_price)*self.sum_stock,0)
             self.percent_profit = round((self.market_price/self.avg_price-1)*100,2)
             self.market_value = self.market_price*self.sum_stock
@@ -345,8 +371,8 @@ def difine_date_receive_stock_buy(check_date, date_milestone):
             t += 1
     return t
 
-def cal_avg_price(pk,stock):
-    item = Transaction.objects.filter(account_id=pk, stock__stock = stock ) 
+def cal_avg_price(account_pk,stock, date_time):
+    item = Transaction.objects.filter(account_id=account_pk, stock__stock = stock, created_at__gt =date_time) 
     total_buy = sum(i.qty for i in item if i.position =='buy' )
     total_sell =sum(i.qty for i in item if i.position =='sell' )
     total_value = sum(i.total_value for i in item if i.position =='buy' )
@@ -518,7 +544,7 @@ def update_or_created_expense_transaction(instance, description_type):
 #chỉ chạy nếu chỉnh tiền/sổ lệnh của ngày trước đó
 def delete_and_recreate_interest_expense(account): 
     date_previous = account.created_at.date()
-    transaction_items_merge_date =Transaction.objects.filter(account=account).values('position', 'date').annotate(total_value=Sum('net_total_value')).order_by('date')
+    transaction_items_merge_date =Transaction.objects.filter(account=account,).values('position', 'date').annotate(total_value=Sum('net_total_value')).order_by('date')
       #nếu thay đổi nạp tiền
     list_data = []
     total_buy_value = 0
@@ -587,17 +613,22 @@ def delete_and_recreate_interest_expense(account):
 def save_field_account(sender, instance, **kwargs):
     created = kwargs.get('created', False)
     account = instance.account
+    milestone_account = AccountMilestone.objects.filter(account =account).order_by('-created_at').first()
+    if milestone_account:
+            date_mileston = milestone_account.created_at
+    else:
+            date_mileston = account.created_at
     
     if sender == CashTransfer:
         if not created:
-            cash_items = CashTransfer.objects.filter(account=account)
+            cash_items = CashTransfer.objects.filter(account=account,created_at__gt = date_mileston)
             account.net_cash_flow = sum(item.amount for item in cash_items)
         else:
             account.net_cash_flow +=  instance.amount
         
     elif sender == Transaction:
         portfolio = Portfolio.objects.filter(stock =instance.stock, account= instance.account).first()
-        transaction_items = Transaction.objects.filter(account=account)
+        transaction_items = Transaction.objects.filter(account=account,created_at__gt = date_mileston)
         if not created:
             # sửa sao kê phí và thuế
             update_or_created_expense_transaction(instance,'transaction_fee' )
@@ -632,16 +663,20 @@ def delete_expense_statement(sender, instance, **kwargs):
           
 @receiver([post_save, post_delete], sender=ExpenseStatement)
 def save_field_account(sender, instance, **kwargs):
-    created = kwargs.get('created', False)
     account = instance.account 
-    interests = ExpenseStatement.objects.filter(account= account , type ='interest')
-    if not created and interests :
-        sum_interest =0
-        for item in interests:
-            sum_interest +=item.amount
-        account.total_loan_interest = sum_interest
-        account.save()
-                
+    # tìm mileston gần nhất
+    milestone_account = AccountMilestone.objects.filter(account = account).order_by('-created_at').first()
+    if milestone_account:
+        date_mileston = milestone_account.created_at
+    else:
+        date_mileston = account.created_at
+    interests_period = ExpenseStatement.objects.filter(account= account , type ='interest' , created_at__gt = date_mileston)
+    sum_interest = 0
+    if interests_period:
+        sum_interest = sum( item.amount for item in interests_period)
+    account.total_temporarily_interest = sum_interest
+    account.save()
+                        
 
     
         
@@ -673,8 +708,6 @@ def calculate_interest():
         for instance in account:
             amount = instance.interest_fee * instance.interest_cash_balance/360
             if abs(amount)>10:
-                instance.total_loan_interest += amount
-                instance.save()
                 ExpenseStatement.objects.create(
                     account=instance,
                     date=datetime.now().date()-timedelta(days=1),
@@ -783,3 +816,77 @@ def check_dividend():
     dividend_today = DividendManage.objects.filter(date_apply =datetime.now().date() )
     for i in dividend_today:
         i.save()
+
+
+
+def setle_milestone_account(account ):
+    status = False
+    if account.market_value == 0  and account.total_temporarily_interest !=0 and account.interest_cash_balance <=0:
+        status = True
+        amount =0
+        date=datetime.now().date()
+        amount1 = account.interest_fee * account.interest_cash_balance/360
+        if account.cash_t1 !=0:
+            if account.interest_cash_balance+account.cash_t1 <0:
+                amount_2 = account.interest_fee * (account.interest_cash_balance+account.cash_t1)/360    
+            else:
+                amount_2 = 0
+        else:
+            amount_2=amount1 
+        amount = amount1 +    amount_2  
+        description = f"TK {account.pk} tính lãi gộp tất toán"
+            
+        ExpenseStatement.objects.create(
+                account=account,
+                date=date,
+                type = 'interest',
+                amount = amount,
+                description = description,
+                interest_cash_balance = account.interest_cash_balance
+                )
+        
+        withdraw_cash = CashTransfer.objects.create(
+            account = account,
+            date = date,
+            amount = -account.nav,
+            description = "Tất toán tài khoản, lệnh rút tiền tự động",
+            
+        )
+        
+        # Tạo account_milestones 
+        # account.total_interest_paid += account.total_temporarily_interest 
+        # account.total_closed_pl += account.total_temporarily_pl
+        number = len(AccountMilestone.objects.filter(account=account)) +1
+    
+        a = AccountMilestone.objects.create(
+            account=account,
+            milestone = number,
+            interest_fee = account.interest_fee,
+            transaction_fee = account.transaction_fee,
+            tax = account.tax,
+            net_cash_flow = account.net_cash_flow,
+            total_buy_trading_value = account.total_buy_trading_value,
+            net_trading_value = account.net_trading_value,
+            interest_paid  = account.total_temporarily_interest,
+            closed_pl    = account.total_temporarily_pl   )
+        
+        
+        account.cash_t0 = 0
+        account.cash_t1 = 0
+        account.cash_t2 = 0
+        account.total_interest_paid += a.interest_paid
+        account.total_closed_pl += a.closed_pl
+        account.milestone_date_lated = a.created_at
+        account.net_cash_flow = 0
+        account.net_trading_value = 0
+        account.total_buy_trading_value = 0
+        account.total_temporarily_interest = 0
+        account.total_temporarily_pl = 0
+        account.save()
+
+    return  status
+
+
+
+
+                

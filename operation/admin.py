@@ -31,6 +31,7 @@ def real_max_power(date):
     else:
         value_trading = 0
     return value_trading
+
 class AccountAdmin(admin.ModelAdmin):
     model= Account
     ordering = ['-nav']
@@ -38,14 +39,14 @@ class AccountAdmin(admin.ModelAdmin):
     fieldsets = [
         ('Thông tin cơ bản', {'fields': ['name','cpd','user_created','description']}),
         ('Biểu phí tài khoản', {'fields': ['interest_fee', 'transaction_fee', 'tax','credit_limit']}),
-        ('Trạng thái tài khoản', {'fields': ['cash_balance', 'interest_cash_balance','net_cash_flow','net_trading_value','market_value','nav','initial_margin_requirement','margin_ratio','excess_equity','custom_status_display']}),
+        ('Trạng thái tài khoản', {'fields': ['cash_balance', 'interest_cash_balance','net_cash_flow','net_trading_value','market_value','nav','initial_margin_requirement','margin_ratio','excess_equity','custom_status_display','milestone_date_lated']}),
         ('Thông tin lãi', {'fields': ['total_loan_interest','total_interest_paid','total_temporarily_interest']}),
         ('Hiệu quả đầu tư', {'fields': ['total_pl','total_closed_pl','total_temporarily_pl']}),
         ('Thành phần số dư tiền tính lãi', {'fields': ['cash_t0','cash_t1','cash_t2','total_buy_trading_value']}),
     ]
     readonly_fields = ['cash_balance', 'market_value', 'nav', 'margin_ratio', 'excess_equity', 'user_created', 'initial_margin_requirement', 'net_cash_flow', 'net_trading_value', 'custom_status_display','cash_t2','cash_t1',
                        'excess_equity', 'interest_cash_balance' , 'total_loan_interest','total_interest_paid','total_temporarily_interest','total_pl','total_closed_pl','total_temporarily_pl', 'user_modified',
-                       'cash_t0','total_buy_trading_value'
+                       'cash_t0','total_buy_trading_value','milestone_date_lated'
                        ]
     search_fields = ['id','name']
     list_filter = ['name',]
@@ -102,42 +103,8 @@ class AccountAdmin(admin.ModelAdmin):
         if request.user.is_superuser:
             # Custom action to reset selected accounts
             for account in queryset:
-                if account.market_value == 0  and account.total_temporarily_interest !=0:
-                    amount =0
-                    if account.interest_cash_balance <=0:
-                        date=datetime.now().date()
-                        amount1 = account.interest_fee * account.interest_cash_balance/360
-                        if account.cash_t1 !=0:
-                            if account.interest_cash_balance+account.cash_t1 <0:
-                                amount_2 = account.interest_fee * (account.interest_cash_balance+account.cash_t1)/360    
-                            else:
-                                amount_2 = 0
-                        else:
-                            amount_2=amount1 
-                        amount = amount1 +    amount_2  
-                        print(amount_2) 
-                        description = f"TK {account.pk} tính lãi gộp tất toán"
-                        
-                        ExpenseStatement.objects.create(
-                            account=account,
-                            date=date,
-                            type = 'interest',
-                            amount = amount,
-                            description = description,
-                            interest_cash_balance = account.interest_cash_balance
-                            )
-                        account.total_loan_interest += amount
-                        account.save()
-                        
-                    account.total_interest_paid += account.total_temporarily_interest 
-                    account.total_closed_pl += account.total_temporarily_pl
-                    account.cash_t0 = account.cash_t0 + account.cash_t1 + account.cash_t2
-                    # account.interest_cash_balance =account.cash_t0 - account.total_temporarily_pl + account.total_temporarily_interest
-                    account.cash_t1 = 0
-                    account.cash_t2 = 0
-
-                    # Save the changes
-                    account.save()
+                status = setle_milestone_account(account)
+                if status == True:
                     self.message_user(request, f'Đã tất toán {queryset.count()} tài khoản đã chọn.')
                 else:
                     self.message_user(request, 'Tài khoản chưa đủ điều kiện để thanh toán lãi', level='ERROR')
@@ -167,6 +134,15 @@ class AccountAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Account,AccountAdmin)
+
+
+class AccountMilestoneAdmin(admin.ModelAdmin):
+    model = AccountMilestone
+    search_fields = ['account__name','account__id']
+    list_display = ['account','created_at','milestone','net_cash_flow','net_trading_value','total_buy_trading_value','interest_paid','closed_pl']
+    list_filter = ['account__name',]
+    readonly_fields = ['account','created_at','milestone','net_cash_flow','net_trading_value','total_buy_trading_value','interest_paid','closed_pl']
+admin.site.register(AccountMilestone,AccountMilestoneAdmin)
 
 class MaxTradingPowerAccountAdmin(admin.ModelAdmin):
     model = MaxTradingPowerAccount
@@ -263,16 +239,20 @@ class TransactionAdmin(admin.ModelAdmin):
         else:
             today = timezone.now().date()
             obj.user_modified = request.user.username
-            if obj.created_at.date() != today:
-                if not request.user.is_superuser:
-                    raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi.")
-                else:
-                    # Thêm dòng cảnh báo cho siêu người dùng
-                    super().save_model(request, obj, form, change)
-                    delete_and_recreate_interest_expense(obj.account)
-                    messages.warning(request, "Sao kê phí lãi vay đã được cập nhật.")
+            milestone_account = AccountMilestone.objects.filter(account =obj.account).order_by('-created_at').first()
+            if milestone_account and obj.created_at < milestone_account.created_at:
+                raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi trong giai đoạn đã được tất toán.")
             else:
-                super().save_model(request, obj, form, change)
+                if obj.created_at.date() != today:
+                    if not request.user.is_superuser:
+                        raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi.")
+                    else:
+                        # Thêm dòng cảnh báo cho siêu người dùng
+                        super().save_model(request, obj, form, change)
+                        delete_and_recreate_interest_expense(obj.account)
+                        messages.warning(request, "Sao kê phí lãi vay đã được cập nhật.")
+                else:
+                    super().save_model(request, obj, form, change)
     
     
 
@@ -423,16 +403,20 @@ class CashTransferAdmin(admin.ModelAdmin):
         else:
             today = timezone.now().date()
             obj.user_modified = request.user.username
-            if obj.created_at.date() != today:
-                if not request.user.is_superuser:
-                    raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi.")
-                else:
-                    # Thêm dòng cảnh báo cho siêu người dùng
-                    messages.warning(request, "Số dư tiền và tài sản đã được cập nhật lại")
-                    super().save_model(request, obj, form, change)
-                    
+            milestone_account = AccountMilestone.objects.filter(account =obj.account).order_by('-created_at').first()
+            if milestone_account and obj.created_at < milestone_account.created_at:
+                raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi trong giai đoạn đã được tất toán.")
             else:
-                super().save_model(request, obj, form, change)
+                if obj.created_at.date() != today:
+                    if not request.user.is_superuser:
+                        raise PermissionDenied("Bạn không có quyền sửa đổi bản ghi.")
+                    else:
+                        # Thêm dòng cảnh báo cho siêu người dùng
+                        messages.warning(request, "Số dư tiền và tài sản đã được cập nhật lại")
+                        super().save_model(request, obj, form, change)
+                        
+                else:
+                    super().save_model(request, obj, form, change)
 
         
 
