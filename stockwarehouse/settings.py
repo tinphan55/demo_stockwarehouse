@@ -104,12 +104,11 @@ WSGI_APPLICATION = 'stockwarehouse.wsgi.application'
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
 
-
 DATABASES_LIST = [{
 #server
       'default': {
          'ENGINE': 'django.db.backends.postgresql',
-         'NAME': 'stock_warehouse',                      
+         'NAME': 'demo_stock_warehouse',                      
          'USER': 'bot',
          'PASSWORD': 'Finwealth@AbotAI@2024',
          'HOST': 'localhost',

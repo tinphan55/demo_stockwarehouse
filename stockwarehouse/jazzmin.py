@@ -1,11 +1,12 @@
 
 JAZZMIN_SETTINGS = {
     # title of the window (Will default to current_admin_site.site_title if absent or None)
-    "site_title": "Kho Cổ Phiếu",
+    "site_title": "Eco Trading",
       # Title on the login screen (19 chars max) (defaults to current_admin_site.site_header if absent or None)
-    "site_header": "Kho Cổ Phiếu",
+    "site_header": "Eco Trading",
      # Title on the brand (19 chars max) (defaults to current_admin_site.site_header if absent or None)
-    "site_brand": "Kho Cổ Phiếu",
+    "site_brand": "Eco Trading",
+
     # Logo to use for login form in dark themes (defaults to login_logo)
     "login_logo_dark": None,
 
@@ -13,15 +14,15 @@ JAZZMIN_SETTINGS = {
     "site_logo_classes": "img-circle" ,
 
     # Relative path to a favicon for your site, will default to site_logo if absent (ideally 32x32 px)
-    # "site_icon": "/infotrading/img/logo.PNG",
-    # "site_logo": "/infotrading/img/logo.PNG",
+    "site_icon": "/infotrading/img/logo.PNG",
+    "site_logo": "/infotrading/img/logo.PNG",
 
 
     # Welcome text on the login screen
-    "welcome_sign": "Welcome to Kho cổ phiếu",
+    "welcome_sign": "Welcome to Eco Trading",
 
     # Copyright on the footer
-    "copyright": "tinphan",
+    "copyright": "Ecoteam",
 
     # List of model admins to search from the search bar, search bar omitted if excluded
     # If you want to use a single search field you dont need to use a list, you can use a simple string 
@@ -43,7 +44,7 @@ JAZZMIN_SETTINGS = {
         # external url that opens in a new window (Permissions can be added)
         # {"name": "Tính khối lượng", "url": "http://ecotrading.com.vn/calculator-qty", "new_window": True},
         # {"name": "Lọc cổ phiếu", "url":"http://ecotrading.com.vn/get_signal/", "new_window": True},
-        {"name": "Tính khối lượng mua", "url":"http://khocophieu.pro/warehouse", "new_window": True},
+        {"name": "Tính khối lượng mua", "url":"http://ecotrading.com.vn/warehouse", "new_window": True},
         # model admin to link to (Permissions checked against model)
         # {"model": "order.Cart"},
 
@@ -123,18 +124,18 @@ JAZZMIN_SETTINGS = {
     # Related Modal #
     #################
     # Use modals instead of popups
-    "related_modal_active": True,
+    "related_modal_active": False,
 
     #############
     # UI Tweaks #
     #############
     # Relative paths to custom CSS/JS scripts (must be present in static files)
-    "custom_css": True,
-    "custom_js": True,
+    "custom_css": False,
+    "custom_js": False,
     # Whether to link font from fonts.googleapis.com (use custom_css to supply font otherwise)
     "use_google_fonts_cdn": True,
     # Whether to show the UI customizer on the sidebar
-    "show_ui_builder": True,
+    "show_ui_builder": False,
 
     ###############
     # Change view #
