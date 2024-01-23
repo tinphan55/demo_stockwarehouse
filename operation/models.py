@@ -353,7 +353,7 @@ class Portfolio (models.Model):
                 date_cal = self.account.milestone_date_lated
             else:
                 date_cal = self.account.created_at
-            self.avg_price = round(cal_avg_price(self.account.pk,self.stock,date_cal )*1000,0)
+            self.avg_price = round(cal_avg_price(self.account.pk,self.stock,date_cal ),0)
             self.profit = round((self.market_price - self.avg_price)*self.sum_stock,0)
             self.percent_profit = round((self.market_price/self.avg_price-1)*100,2)
             self.market_value = self.market_price*self.sum_stock
