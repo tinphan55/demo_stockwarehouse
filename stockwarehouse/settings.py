@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'cpd',
     'realstockaccount',
     'regulations',
+    'django_extensions',
   
     
 ]
@@ -132,14 +133,14 @@ DATABASES_LIST = [{
 {
      'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'postgres',                      
+        'NAME': 'backup_data',                      
         'USER': 'postgres',
         'PASSWORD': 'Ecotrading2024',
         'HOST': 'localhost',
         'PORT': '5432',
     }
 }]
-DATABASES = DATABASES_LIST[0]
+DATABASES = DATABASES_LIST[2]
 
 # Password validation
 # https://docs.djangoproject.com/en/4.1/ref/settings/#auth-password-validators
