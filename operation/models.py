@@ -15,6 +15,7 @@ from django.db.models import Q
 from cpd.models import ClientPartnerInfo
 from django.contrib.auth.hashers import make_password
 from regulations.models import *
+from accfifo import Entry, FIFO
 
 
 maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
@@ -375,46 +376,20 @@ def difine_date_receive_stock_buy(check_date, date_milestone):
             t += 1
     return t
 
-def cal_avg_price(account_pk,stock, date_time):
-    item = Transaction.objects.filter(account_id=account_pk, stock__stock = stock, created_at__gt =date_time) 
-    total_buy = sum(i.qty for i in item if i.position =='buy' )
-    total_sell =sum(i.qty for i in item if i.position =='sell' )
-    total_value = sum(i.total_value for i in item if i.position =='buy' )
-    date_list =list(item.filter(position ='sell').values_list('date', flat=True).distinct()) 
-    avg_price = 0
-    date_find=None
 
-    #kiểm tra có bán hay không, trường hợp đã có bán
-    if total_sell >0:
-        date_list.sort(reverse=True) 
-        
-        # kiểm tra ngày gần nhất bán hết và mua lại
-        for date_check in date_list: 
-            new_item = item.filter(date__lte =date_check)
-            check_total_buy = 0
-            check_total_sell =0
-            for i in new_item:
-                if i.position == 'buy':
-                    check_total_buy += i.qty 
-                else:
-                    check_total_sell +=i.qty
-            if check_total_buy == check_total_sell:
-                date_find = i.date
-                break 
-        if date_find:
-            cal_item = item.filter(position='buy',date__gt= date_find )
-            for i in cal_item:
-                if i.position =='buy':
-                    total_buy += i.qty 
-                    total_value +=i.total_value
-                    avg_price = total_value/total_buy/1000
-                    
+
+def cal_avg_price(account,stock, date_time): 
+    item_transactions = Transaction.objects.filter(account=account, stock__stock = stock, created_at__gt =date_time).order_by('date','created_at')
+    for item in item_transactions:
+        if item.position == 'buy':
+            fifo = FIFO([Entry(item.qty, item.price)])
         else:
-            avg_price = total_value/total_buy/1000
-    # Nếu có mua nhưng chưa bán lệnh nào
-    elif total_buy >0:
-        avg_price = total_value/total_buy/1000
-    return avg_price
+            fifo = FIFO([Entry(-item.qty, item.price)])
+    return fifo.avgcost
+
+
+
+
 
 
 
@@ -576,7 +551,8 @@ def delete_and_recreate_interest_expense(account):
             dict_data['date'] = item['date']
             dict_data['interest_cash_balance'] =  cash_t0 +total_buy_value
             dict_data['interest'] = round(dict_data['interest_cash_balance']*account.interest_fee/360,0)
-            list_data.append(dict_data)
+            if list_data and list_data[-1]['date'] != dict_data['date']:
+                list_data.append(dict_data)
             date_previous = item['date']   
     start_date = list_data[0]['date']
     end_date = datetime.now().date() -  timedelta(days=1)
