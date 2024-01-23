@@ -108,7 +108,7 @@ DATABASES_LIST = [{
 #server
       'default': {
          'ENGINE': 'django.db.backends.postgresql',
-         'NAME': 'demo_stock_warehouse',                      
+         'NAME': 'demo_warehouse',                      
          'USER': 'bot',
          'PASSWORD': 'Finwealth@AbotAI@2024',
          'HOST': 'localhost',
