@@ -530,6 +530,7 @@ def delete_and_recreate_interest_expense(account):
     cash_t2  =0
     cash_t1=0
     cash_t0=0
+    count =0
     if transaction_items_merge_date:
         for item in transaction_items_merge_date:
             dict_data ={}
@@ -551,11 +552,9 @@ def delete_and_recreate_interest_expense(account):
             dict_data['date'] = item['date']
             dict_data['interest_cash_balance'] =  cash_t0 +total_buy_value
             dict_data['interest'] = round(dict_data['interest_cash_balance']*account.interest_fee/360,0)
-            # if list_data and list_data[-1]['date'] != dict_data['date']:
-            #     list_data.append(dict_data)
-            list_data.append(dict_data)
-            unique_set = set(list_data)
-            list_data = list(unique_set)
+            count +=1
+            if count >=1 and list_data[-1]['date'] != dict_data['date']:
+                list_data.append(dict_data)
             date_previous = item['date']   
     start_date = list_data[0]['date']
     end_date = datetime.now().date() -  timedelta(days=1)
