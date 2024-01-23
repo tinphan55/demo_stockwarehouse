@@ -17,27 +17,29 @@ from django.contrib.auth.hashers import make_password
 from regulations.models import *
 
 
-maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
-force_sell_margin_ratio = OperationRegulations.objects.get(pk=5).parameters
+# maintenance_margin_ratio = OperationRegulations.objects.get(pk=4).parameters
+# force_sell_margin_ratio = OperationRegulations.objects.get(pk=5).parameters
+maintenance_margin_ratio =17 
+force_sell_margin_ratio = 15
 
-def get_default_parameters(pk):
-    try:
-        return OperationRegulations.objects.get(pk=pk).parameters
-    except OperationRegulations.DoesNotExist:
-        # Trả về giá trị mặc định nếu không tìm thấy đối tượng
-        return 0.0  # hoặc giá trị mặc định của bạn
+# def get_default_parameters(pk):
+#     try:
+#         return OperationRegulations.objects.get(pk=pk).parameters
+#     except OperationRegulations.DoesNotExist:
+#         # Trả về giá trị mặc định nếu không tìm thấy đối tượng
+#         return 0.0  # hoặc giá trị mặc định của bạn
 
-def get_interest_fee_default():
-    return get_default_parameters(pk=3)
+# def get_interest_fee_default():
+#     return get_default_parameters(pk=3)
 
-def get_transaction_fee_default():
-    return get_default_parameters(pk=1)
+# def get_transaction_fee_default():
+#     return get_default_parameters(pk=1)
 
-def get_tax_fee_default():
-    return get_default_parameters(pk=2)
+# def get_tax_fee_default():
+#     return get_default_parameters(pk=2)
 
-def get_credit_limit_default():
-    return get_default_parameters(pk=6)
+# def get_credit_limit_default():
+#     return get_default_parameters(pk=6)
 
 
 
@@ -53,9 +55,12 @@ class Account (models.Model):
     description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
     cpd = models.ForeignKey(ClientPartnerInfo,null=True, blank = True,on_delete=models.CASCADE, verbose_name= 'Người giới thiệu' )
     #biểu phí dịch vụ
-    interest_fee = models.FloatField(default=get_interest_fee_default, verbose_name='Lãi suất')
-    transaction_fee = models.FloatField(default=get_transaction_fee_default, verbose_name='Phí giao dịch')
-    tax = models.FloatField(default=get_tax_fee_default, verbose_name='Thuế')
+    # interest_fee = models.FloatField(default=get_interest_fee_default, verbose_name='Lãi suất')
+    # transaction_fee = models.FloatField(default=get_transaction_fee_default, verbose_name='Phí giao dịch')
+    # tax = models.FloatField(default=get_tax_fee_default, verbose_name='Thuế')
+    interest_fee = models.FloatField(default=0.16, verbose_name='Lãi suất')
+    transaction_fee = models.FloatField(default=0.0015, verbose_name='Phí giao dịch')
+    tax = models.FloatField(default=0.0001, verbose_name='Thuế')
     # Phục vụ tính tổng cash_balace:
     net_cash_flow= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
     net_trading_value= models.FloatField(default=0,verbose_name= 'Giao dịch ròng')
@@ -79,7 +84,7 @@ class Account (models.Model):
     total_pl = models.FloatField(default=0,verbose_name= 'Tổng lời lỗ')
     total_closed_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ đã chốt')
     total_temporarily_pl= models.FloatField(default=0,verbose_name= 'Tổng lời lỗ tạm tính')
-    credit_limit = models.FloatField(default=get_credit_limit_default, verbose_name='Hạn mức mua')
+    credit_limit = models.FloatField(default=1000000000, verbose_name='Hạn mức mua')
     milestone_date_lated = models.DateTimeField(null =True, blank =True, verbose_name = 'Ngày tất toán gần nhất')
     class Meta:
          verbose_name = 'Tài khoản'
@@ -159,9 +164,9 @@ class AccountMilestone(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name = 'Ngày tạo' )
     modified_at = models.DateTimeField(auto_now=True, verbose_name = 'Ngày chỉnh sửa' )
     description = models.TextField(max_length=255, blank=True, verbose_name= 'Mô tả')
-    interest_fee = models.FloatField(default=get_interest_fee_default, verbose_name='Lãi suất')
-    transaction_fee = models.FloatField(default=get_transaction_fee_default, verbose_name='Phí giao dịch')
-    tax = models.FloatField(default=get_tax_fee_default, verbose_name='Thuế')
+    interest_fee = models.FloatField(default=0.16, verbose_name='Lãi suất')
+    transaction_fee = models.FloatField(default=0.0015, verbose_name='Phí giao dịch')
+    tax = models.FloatField(default=0.0001, verbose_name='Thuế')
     # Phục vụ tính tổng cash_balace:
     net_cash_flow= models.FloatField(default=0,verbose_name= 'Nạp rút tiền ròng')
     total_buy_trading_value= models.FloatField(default=0,verbose_name= 'Tổng giá trị mua')
