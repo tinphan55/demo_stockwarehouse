@@ -133,7 +133,7 @@ DATABASES_LIST = [{
 {
      'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'backup_data',                      
+        'NAME': 'postgres',                      
         'USER': 'postgres',
         'PASSWORD': 'Ecotrading2024',
         'HOST': 'localhost',
